@@ -1,0 +1,1 @@
+python fit.py --data-path '/media/student/8d1913cf-1155-47a5-a7db-b9a51f445d8f/student/data/review.csv' --text-col 'text' --label-col 'stars' --label-values-positive 5 --label-values-positive 4 --label-values-negative 1 --num-epochs 1

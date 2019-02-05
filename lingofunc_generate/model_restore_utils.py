@@ -1,23 +1,19 @@
 import os
 import shutil
 from textgenrnn.textgenrnn import textgenrnn
+from lingofunc_generate.constants import MODELS_FOLDER_PATH, MODEL_DATA_FILES_ENDINGS
+from lingofunc_generate.utils import log as _log
+from lingofunc_generate.utils import get_data_file_key_for_model_constructor
 
 
-MODELS_FOLDER_PATH = os.path.join(
-    '..', 'models'
-)
-
-MODEL_DATA_FILES_ENDINGS = {
-    'weights': '_weights.hdf5',
-    'vocab': '_vocab.json',
-    'config': '_config.json'
-}
-
-MODEL_DATA_FILES_TYPES = list(MODEL_DATA_FILES_ENDINGS.keys())
+MODEL_DATA_FILES_KEYS_FOR_MODEL_CONSTRUCTOR = [
+    get_data_file_key_for_model_constructor(data_attribute_name)
+    for data_attribute_name in MODEL_DATA_FILES_ENDINGS.keys()
+]
 
 
-def log(text, prefix='Utils: '):
-    print(prefix + text)
+def log(text):
+    _log(text, prefix='Model restore utils: ')
 
 
 def move_model_data(model_name, source_folder_path, target_folder_path=None):
@@ -52,20 +48,19 @@ def restore_model_from_data(model_name, data_folder_path=None):
     else:
         data_folder_path = MODELS_FOLDER_PATH
 
-    data_files_paths = dict.fromkeys(MODEL_DATA_FILES_TYPES, None)
+    data_files_paths = dict.fromkeys(MODEL_DATA_FILES_KEYS_FOR_MODEL_CONSTRUCTOR, None)
 
     for f in os.listdir(data_folder_path):
         if not f.startswith(model_name):
             continue
 
-        for file_type, ending in MODEL_DATA_FILES_ENDINGS.items():
+        for model_attribute_name, ending in MODEL_DATA_FILES_ENDINGS.items():
             if f.endswith(ending):
-                data_files_paths[file_type] = os.path.join(data_folder_path, f)
+                file_key = get_data_file_key_for_model_constructor(model_attribute_name)
+                data_files_paths[file_key] = os.path.join(data_folder_path, f)
 
-    if data_files_paths['weights'] is None:
+    if data_files_paths[get_data_file_key_for_model_constructor('weights')] is None:
         raise ValueError('No weights found for model "{}"'.format(model_name))
 
     return textgenrnn(name=model_name,
-                      weights_path=data_files_paths['weights'],
-                      vocab_path=data_files_paths['vocab'],
-                      config_path=data_files_paths['config'])
+                      **data_files_paths)
