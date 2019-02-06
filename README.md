@@ -19,6 +19,7 @@
 Предварительно указывается, какие метки к каким стилям относятся.
 
 Репозиторий содержит
+
     * `lingofunc_generate`: модуль с .py файлами
     * `scripts`: скрипты, с помощью которых можно работать с модулем
     * `notebooks`: папка с ноутбуком, где происходило кое-какое знакомство с `textgenrnn`
@@ -51,7 +52,7 @@
     * `server.py`:
         * `--port`: The port to listen on (default is 8001)
         * `--seed`: Random seed
-        * `--temperature`: Low temperature (eg 0.2) makes the model more confident but also more conservative when generating response. High temperatures (eg 0.9, values higher than 1.0 also possible) make responses diverse, but mistakes are also more likely to take place
+        * `--temperature`: Low temperature (eg 0.2) makes the model more confident but also more conservative when generating response. High temperatures (eg 0.9, values bigger than 1.0 also possible) make responses diverse, but mistakes are also more likely to take place
 
 ## scripts
 
