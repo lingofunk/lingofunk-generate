@@ -1,7 +1,11 @@
+import sys
 import os
 
-MODELS_FOLDER_PATH = os.path.join('..', 'models')
-DATA_FOLDER_PATH = os.path.join('..', 'data')
+project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, project_folder)
+
+MODELS_FOLDER_PATH = os.path.join(project_folder, 'models')
+DATA_FOLDER_PATH = os.path.join(project_folder, 'data')
 
 DATA_FILE_NAME_DEFAULT = 'review.csv'
 DATA_FILE_PATH_DEFAULT = os.path.join(DATA_FOLDER_PATH, DATA_FILE_NAME_DEFAULT)

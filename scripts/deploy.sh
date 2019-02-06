@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cd lingofunc_generate && python server.py && cd ..
+python ./lingofunc_generate/server.py

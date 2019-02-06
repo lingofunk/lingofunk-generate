@@ -5,8 +5,7 @@ import argparse
 import pandas as pd
 from textgenrnn.textgenrnn import textgenrnn
 
-current_folder = os.path.dirname(os.path.abspath(__file__))
-project_folder = os.path.join(current_folder, '..')
+project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
 from lingofunc_generate.model_restore_utils import move_model_data
@@ -89,9 +88,8 @@ def _fit_and_save_model(model_name,
     log('save model ' + model_name)
 
     try:
-        move_model_data(
-            model_name=model_name,
-            source_folder_path=os.path.dirname(os.path.abspath(__file__)))
+        move_model_data(model_name=model_name,
+                        source_folder_path=os.getcwd())
     except IOError:
         log('error, fail to move model data files to special folder')
 
@@ -103,6 +101,8 @@ def _parse_args():
 
     parser.add_argument(
         '--debug', required=False, action='store_true')
+    parser.add_argument(
+        '--nrows', type=int, required=False, default=NROWS_TO_READ_IF_DEBUG)
 
     parser.add_argument(
         '--data-path',type=str, required=False, default=DATA_FILE_PATH_DEFAULT)
@@ -145,7 +145,7 @@ def _main():
     data = _read_data_csv(
         args.data_path,
         cols=[args.text_col, args.label_col],
-        nrows=NROWS_TO_READ_IF_DEBUG if args.debug else None)
+        nrows=args.nrows if args.debug else None)
 
     for text_style in TEXT_STYLES:
         text_labels = getattr(args, 'labels_' + text_style)

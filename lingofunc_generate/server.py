@@ -1,10 +1,13 @@
 import sys
+import os
 import argparse
+import time
 from flask import Flask, request
 import tensorflow as tf
 import numpy as np
 
-sys.path.insert(0, '..')
+project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, project_folder)
 
 from lingofunc_generate.model_restore_utils import restore_model_from_data
 from lingofunc_generate.utils import get_model_name
@@ -58,7 +61,7 @@ def _parse_args():
         help='The port to listen on (default is 8001).')
 
     parser.add_argument(
-        '--seed', type=int, required=False, default=11221963)
+        '--seed', type=int, required=False, default=int(time.time()))
 
     parser.add_argument(
         '--temperature', type=float, required=False, default=0.5)
