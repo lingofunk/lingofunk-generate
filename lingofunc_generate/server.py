@@ -9,7 +9,7 @@ sys.path.insert(0, '..')
 from lingofunc_generate.model_restore_utils import restore_model_from_data
 from lingofunc_generate.utils import get_model_name
 from lingofunc_generate.utils import log as _log
-from lingofunc_generate.constants import TEXT_CLASS_LABELS
+from lingofunc_generate.constants import TEXT_STYLES
 
 
 DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND = 'Required model not found. Sorry'
@@ -18,7 +18,7 @@ NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING = 2
 
 app = Flask(__name__)
 
-models = dict.fromkeys(TEXT_CLASS_LABELS, None)
+models = dict.fromkeys(TEXT_STYLES, None)
 temperature = None
 graph = None
 
@@ -34,18 +34,18 @@ def hello_world():
 
 @app.route('/generate', methods=['GET'])
 def generate_text():
-    log('generate text for class "{}"'.format(request.args['class']))
+    log('generate text for style "{}"'.format(request.args['style']))
 
-    class_label = request.args['class']
+    text_style = request.args['style']
 
     global graph
     global temperature
 
-    if models[class_label] is not None:
-        with graph.as_default():
-            text = models[class_label].generate(1, temperature=temperature, return_as_list=True)[0]
-    else:
-        text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+    with graph.as_default():
+        if models[text_style] is not None:
+            text = models[text_style].generate(1, temperature=temperature, return_as_list=True)[0]
+        else:
+            text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
 
     return text
 
@@ -78,8 +78,8 @@ def _set_temperature(t):
 def _load_models():
     log('load models')
 
-    for class_label in TEXT_CLASS_LABELS:
-        model_name = get_model_name(class_label)
+    for text_style in TEXT_STYLES:
+        model_name = get_model_name(text_style)
 
         try:
             model = restore_model_from_data(model_name)
@@ -87,7 +87,7 @@ def _load_models():
             log('model "{}" not found'.format(model_name))
             model = None
 
-        models[class_label] = model
+        models[text_style] = model
 
     global graph
     graph = tf.get_default_graph()
@@ -98,16 +98,16 @@ def _test_models():
 
     global temperature
 
-    for class_label, model in models.items():
+    for text_style, model in models.items():
         if model is None:
             continue
 
         try:
             for _ in range(NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING):
                 text = model.generate(1, temperature=temperature, return_as_list=True)[0]
-                log('generate sample of class "{}" model\n{}'.format(class_label, text))
+                log('generate sample of style "{}" model\n{}'.format(text_style, text))
         except:
-            raise ValueError('Model for class "{}" is invalid'.format(class_label))
+            raise ValueError('Model for style "{}" is invalid'.format(text_style))
 
 
 def _main():
