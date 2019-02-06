@@ -1,25 +1,60 @@
-lingofunk-generate
-==================
+# lingofunk-generate
 
-![image](https://img.shields.io/pypi/v/lingofunk-generate.svg%0A%20:target:%20https://pypi.python.org/pypi/lingofunk-generate%0A%20:alt:%20Latest%20PyPI%20version)
+## Вкратце
 
-[![Latest Travis CI build status](-.png)](-)
+Модуль для генерации текстов с помощью [textgenrnn](https://github.com/minimaxir/textgenrnn).
 
-Yelp Review Generator
+Обращаясь к flask-серверу, можно получать тексты в стилях:
 
-Usage
------
+    * `positive`
+    * `negative`
+    * `neutral`
 
-Installation
-------------
+Для каждого стиля обучается своя `textgenrnn` модель.
+Обучается на .csv файле, где в табличке должны быть по крайней мере две колонки:
 
-### Requirements
+    * колонка с текстами
+    * колонка со стилевыми метками
 
-Compatibility
--------------
+Предварительно указывается, какие метки к каким стилям относятся.
 
-Licence
--------
+Репозиторий содержит
+    * `lingofunc_generate`: модуль с .py файлами
+    * `scripts`: скрипты, с помощью которых можно работать с модулем
+    * `notebooks`: папка с ноутбуком, где происходило кое-какое знакомство с `textgenrnn`
+    * `models`: папка, куда будут сохраняться модели
+    * `data`: папка с данными для обучения
 
-Authors
--------
+## lingofunc_generate
+
+    * `constants.py`: некоторые константы, которые используются в других файлах модуля. В частности, там указываются стили (`text_style`), по которым будут обучаться модели
+    * `utils.py`: пара функций "общего" назначения
+    * `model_restore_utils.py`: функции, связанные с сохранением и восстановлением `textgenrnn` моделей (как предобученных, так и новых)
+    * `fit.py`: обучение моделей.
+    Файл можно запускать.
+    Про параметры запуска можно узнать из `help` справки `python fi.py -h`.
+    На всякий случай скопирую `help` строки и сюда:
+        * `--debug`: Specify, if want to run fitting in debug mode. It means that if parameter nrows is also specified, only first nrows will be read from .csv file
+        * `--nrows`: How many rows should be read in debug mode
+        * `--data-path`: Path to data .csv file
+        * `--text-col`: Text column name in data file
+        * `--label-col`: Style label column name in data file
+        * `--word-level`: Specify, if want to build word-level models (instead of default char-level models)
+        * `--new-model`: Specify, if want to get new textgenrnn model, not pretrained one
+        * `--train-size`: Train size (validation size = 1.0 - train size)
+        * `--dropout Dropout (the proportion of tokens to be thrown away on each epoch)
+        * `--num-epochs`: Number of epochs to train the model
+        * `--gen-epochs`: Number of epochs, after each of which sample text generations ny the model will be displayed in console
+        * `--max-length`: Maximum number of previous tokens (words or chars) to take into account while predicting the next one
+        * `--max-gen-length`: Maximum number of tokens to generate as sample after gen_epochs
+        * `--labels-<text_style>`: Texts of which labels should be treated as ones of style "<text_style>"
+    * `server.py`:
+        * `--port`: The port to listen on (default is 8001)
+        * `--seed`: Random seed
+        * `--temperature`: Low temperature (eg 0.2) makes the model more confident but also more conservative when generating response. High temperatures (eg 0.9, values higher than 1.0 also possible) make responses diverse, but mistakes are also more likely to take place
+
+## scripts
+
+    * `link_data.sh`: делает ссылку на необходимый для обучения моделей .csv файл в папке `data`
+    * `fit.sh`:
+    * `deploy.sh`:

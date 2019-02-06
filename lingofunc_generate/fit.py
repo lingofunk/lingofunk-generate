@@ -100,38 +100,53 @@ def _parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--debug', required=False, action='store_true')
+        '--debug', action='store_true', required=False,
+        help='Specify, if want to run fitting in debug mode. ' +\
+             'It means that if parameter nrows is also specified, only first nrows will be read from .csv file')
     parser.add_argument(
-        '--nrows', type=int, required=False, default=NROWS_TO_READ_IF_DEBUG)
+        '--nrows', type=int, required=False, default=NROWS_TO_READ_IF_DEBUG,
+        help='How many rows should be read in debug mode')
 
     parser.add_argument(
-        '--data-path',type=str, required=False, default=DATA_FILE_PATH_DEFAULT)
+        '--data-path',type=str, required=False, default=DATA_FILE_PATH_DEFAULT,
+        help='Path to data .csv file')
     parser.add_argument(
-        '--text-col', type=str, required=True)
+        '--text-col', type=str, required=True,
+        help='Text column name in data file')
     parser.add_argument(
-        '--label-col', type=str, required=True)
+        '--label-col', type=str, required=True,
+        help='Style label column name in data file')
 
     parser.add_argument(
-        '--word-level', type=bool, required=False, default=False)
+        '--word-level', action='store_true', required=False,
+        help='Specify, if want to build word-level models (instead of default char-level models)')
     parser.add_argument(
-        '--new-model', type=bool, required=False, default=True)
+        '--new-model', action='store_true', required=False,
+        help='Specify, if want to get new textgenrnn model, not pretrained one')
     parser.add_argument(
-        '--train-size', type=float, required=False, default=TRAIN_SIZE_DEFAULT)
+        '--train-size', type=float, required=False, default=TRAIN_SIZE_DEFAULT,
+        help='Train size (validation size = 1.0 - train size)')
     parser.add_argument(
-        '--dropout', type=float, required=False, default=DROPOUT_DEFAULT)
+        '--dropout', type=float, required=False, default=DROPOUT_DEFAULT,
+        help='Dropout (the proportion of tokens to be thrown away on each epoch)')
 
     parser.add_argument(
-        '--num-epochs', type=int, required=False, default=NUM_EPOCHS_DEFAULT)
+        '--num-epochs', type=int, required=False, default=NUM_EPOCHS_DEFAULT,
+        help='Number of epochs to train the model')
     parser.add_argument(
-        '--gen-epochs', type=int, required=False, default=None)
+        '--gen-epochs', type=int, required=False, default=None,
+        help='Number of epochs, after each of which sample text generations ny the model will be displayed in console')
     parser.add_argument(
-        '--max-length', type=int, required=False, default=None)
+        '--max-length', type=int, required=False, default=None,
+        help='Maximum number of previous tokens (words or chars) to take into account while predicting the next one')
     parser.add_argument(
-        '--max-gen-length', type=int, required=False, default=None)
+        '--max-gen-length', type=int, required=False, default=None,
+        help='Maximum number of tokens to generate as sample after gen_epochs')
 
     for text_style in TEXT_STYLES:
         parser.add_argument(
-            '--labels-{}'.format(text_style), action='append', type=int, required=False)
+            '--labels-{}'.format(text_style), action='append', type=int, required=False,
+            help='Texts of which labels should be treated as ones of style "{}"'.format(text_style))
 
     return parser.parse_args()
 

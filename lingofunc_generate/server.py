@@ -13,6 +13,8 @@ from lingofunc_generate.model_restore_utils import restore_model_from_data
 from lingofunc_generate.utils import get_model_name
 from lingofunc_generate.utils import log as _log
 from lingofunc_generate.constants import TEXT_STYLES
+from lingofunc_generate.constants import PORT_DEFAULT
+from lingofunc_generate.constants import TEMPERATURE_DEFAULT
 
 
 DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND = 'Required model not found. Sorry'
@@ -57,14 +59,19 @@ def _parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--port', type=int, required=False, default=8001,
-        help='The port to listen on (default is 8001).')
+        '--port', type=int, required=False, default=PORT_DEFAULT,
+        help='The port to listen on')
 
     parser.add_argument(
-        '--seed', type=int, required=False, default=int(time.time()))
+        '--seed', type=int, required=False, default=int(time.time()),
+        help='Random seed')
 
     parser.add_argument(
-        '--temperature', type=float, required=False, default=0.5)
+        '--temperature', type=float, required=False, default=TEMPERATURE_DEFAULT,
+        help='Low temperature (eg 0.2) makes the model more confident but also more conservative ' + \
+             'when generating response. ' + \
+             'High temperatures (eg 0.9, values higher than 1.0 also possible) make responses diverse, ' + \
+             'but mistakes are also more likely to take place')
 
     return parser.parse_args()
 
