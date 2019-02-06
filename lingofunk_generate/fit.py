@@ -8,19 +8,19 @@ from textgenrnn.textgenrnn import textgenrnn
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
-from lingofunc_generate.model_restore_utils import move_model_data
-from lingofunc_generate.constants import MODELS_FOLDER_PATH
-from lingofunc_generate.constants import TEXT_STYLES
-from lingofunc_generate.constants import DATA_FILE_PATH_DEFAULT
-from lingofunc_generate.constants import MAX_LENGTH_DEFAULT_CHAR_LEVEL, MAX_LENGTH_DEFAULT_WORD_LEVEL
-from lingofunc_generate.constants import MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL, MAX_GEN_LENGTH_DEFAULT_WORD_LEVEL
-from lingofunc_generate.constants import GEN_EPOCHS_DIVIDER_DEFAULT, GEN_EPOCHS_DIVIDER_DEFAULT_IF_DEGUG
-from lingofunc_generate.constants import NUM_EPOCHS_DEFAULT
-from lingofunc_generate.constants import TRAIN_SIZE_DEFAULT
-from lingofunc_generate.constants import DROPOUT_DEFAULT
-from lingofunc_generate.constants import NROWS_TO_READ_IF_DEBUG
-from lingofunc_generate.utils import get_model_name
-from lingofunc_generate.utils import log as _log
+from lingofunk_generate.model_restore_utils import move_model_data
+from lingofunk_generate.constants import MODELS_FOLDER_PATH
+from lingofunk_generate.constants import TEXT_STYLES
+from lingofunk_generate.constants import DATA_FILE_PATH_DEFAULT
+from lingofunk_generate.constants import MAX_LENGTH_DEFAULT_CHAR_LEVEL, MAX_LENGTH_DEFAULT_WORD_LEVEL
+from lingofunk_generate.constants import MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL, MAX_GEN_LENGTH_DEFAULT_WORD_LEVEL
+from lingofunk_generate.constants import GEN_EPOCHS_DIVIDER_DEFAULT, GEN_EPOCHS_DIVIDER_DEFAULT_IF_DEGUG
+from lingofunk_generate.constants import NUM_EPOCHS_DEFAULT
+from lingofunk_generate.constants import TRAIN_SIZE_DEFAULT
+from lingofunk_generate.constants import DROPOUT_DEFAULT
+from lingofunk_generate.constants import NROWS_TO_READ_IF_DEBUG
+from lingofunk_generate.utils import get_model_name
+from lingofunk_generate.utils import log as _log
 
 
 def log(text):

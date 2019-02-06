@@ -1,25 +1,28 @@
 import sys
 import os
 import argparse
+import logging
 import time
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import tensorflow as tf
 import numpy as np
 
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
-from lingofunc_generate.model_restore_utils import restore_model_from_data
-from lingofunc_generate.utils import get_model_name
-from lingofunc_generate.utils import log as _log
-from lingofunc_generate.constants import TEXT_STYLES
-from lingofunc_generate.constants import PORT_DEFAULT
-from lingofunc_generate.constants import TEMPERATURE_DEFAULT
+from lingofunk_generate.model_restore_utils import restore_model_from_data
+from lingofunk_generate.utils import get_model_name
+from lingofunk_generate.utils import log as _log
+from lingofunk_generate.constants import TEXT_STYLES
+from lingofunk_generate.constants import PORT_DEFAULT
+from lingofunk_generate.constants import TEMPERATURE_DEFAULT
+from lingofunk_generate.constants import DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+from lingofunk_generate.constants import NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING
 
 
-DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND = 'Required model not found. Sorry'
-NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING = 2
-
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -32,16 +35,19 @@ def log(text):
     _log(text, prefix='Server: ')
 
 
-@app.route('/', methods=['GET'])
+@app.route('/hello', methods=['GET'])
 def hello_world():
     return 'Hello World!'
 
 
-@app.route('/generate', methods=['GET'])
+@app.route('/generate', methods=['GET', 'POST'])
 def generate_text():
-    log('generate text for style "{}"'.format(request.args['style']))
+    # TODO: unify logging
+    # log('generate text for style "{}"'.format(request.args['style']))
+    logger.debug('request: {}'.format(request.get_json()))
 
-    text_style = request.args['style']
+    data = request.get_json()
+    text_style = data.get('style')
 
     global graph
     global temperature
@@ -52,7 +58,7 @@ def generate_text():
         else:
             text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
 
-    return text
+    return jsonify(text=text)
 
 
 def _parse_args():

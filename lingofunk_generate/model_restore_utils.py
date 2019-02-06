@@ -1,9 +1,9 @@
 import os
 import shutil
 from textgenrnn.textgenrnn import textgenrnn
-from lingofunc_generate.constants import MODELS_FOLDER_PATH, MODEL_DATA_FILES_ENDINGS
-from lingofunc_generate.utils import log as _log
-from lingofunc_generate.utils import get_data_file_key_for_model_constructor
+from lingofunk_generate.constants import MODELS_FOLDER_PATH, MODEL_DATA_FILES_ENDINGS
+from lingofunk_generate.utils import log as _log
+from lingofunk_generate.utils import get_data_file_key_for_model_constructor
 
 
 MODEL_DATA_FILES_KEYS_FOR_MODEL_CONSTRUCTOR = [
