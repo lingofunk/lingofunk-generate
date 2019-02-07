@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-python ./lingofunc_generate/fit.py \
+python ./lingofunk_generate/fit.py \
     --debug --nrows 100 \
     --data-path './data/review.csv' \
     --text-col 'text' \
