@@ -13,7 +13,6 @@ python ./lingofunk_generate/fit.py \
     --num-epochs 500
 
 # --new-model
->>>>>>> feature/refine-dataset-reading
 # --word-level
 # --max-length 10
 # --nrows 50000 \
