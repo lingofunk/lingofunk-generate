@@ -40,10 +40,8 @@ def hello_world():
     return 'Hello World!'
 
 
-@app.route('/generate', methods=['GET', 'POST'])
-def generate_text():
-    # TODO: unify logging
-    # log('generate text for style "{}"'.format(request.args['style']))
+@app.route('/generate/discrete', methods=['POST'])
+def generate_discrete():
     logger.debug('request: {}'.format(request.get_json()))
 
     data = request.get_json()
@@ -51,6 +49,27 @@ def generate_text():
 
     global graph
     global temperature
+
+    with graph.as_default():
+        if models[text_style] is not None:
+            text = models[text_style].generate(1, temperature=temperature, return_as_list=True)[0]
+        else:
+            text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+
+    return jsonify(text=text)
+
+
+@app.route('/generate/continuous', methods=['POST'])
+def generate_continuous():
+    logger.debug('request: {}'.format(request.get_json()))
+
+    data = request.get_json()
+    text_style_value = data.get('value')
+
+    global graph
+    global temperature
+
+    models
 
     with graph.as_default():
         if models[text_style] is not None:
