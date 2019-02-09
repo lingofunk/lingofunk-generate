@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import pandas as pd
+import numpy as np
 from textgenrnn.textgenrnn import textgenrnn
 
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -14,11 +15,9 @@ from lingofunk_generate.constants import TEXT_STYLES
 from lingofunk_generate.constants import DATA_FILE_PATH_DEFAULT
 from lingofunk_generate.constants import MAX_LENGTH_DEFAULT_CHAR_LEVEL, MAX_LENGTH_DEFAULT_WORD_LEVEL
 from lingofunk_generate.constants import MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL, MAX_GEN_LENGTH_DEFAULT_WORD_LEVEL
-from lingofunk_generate.constants import GEN_EPOCHS_DIVIDER_DEFAULT, GEN_EPOCHS_DIVIDER_DEFAULT_IF_DEGUG
 from lingofunk_generate.constants import NUM_EPOCHS_DEFAULT
 from lingofunk_generate.constants import TRAIN_SIZE_DEFAULT
 from lingofunk_generate.constants import DROPOUT_DEFAULT
-from lingofunk_generate.constants import NROWS_TO_READ_IF_DEBUG
 from lingofunk_generate.utils import get_model_name
 from lingofunk_generate.utils import log as _log
 
@@ -42,10 +41,44 @@ def _create_folder_for_models_if_not_exists():
 def _read_data_csv(data_path, index_col=0, cols=None, nrows=None):
     log('read data')
 
-    df = pd.read_csv(data_path, usecols=cols, index_col=index_col, nrows=nrows)
+    df = pd.read_csv(data_path, usecols=cols, sep=',', index_col=index_col, nrows=nrows)
     df.reset_index(inplace=True)
 
     return df
+
+
+def _stratify_data(df_original, text_col, label_col, max_texts_per_label=None):
+    if max_texts_per_label is None:
+        return df_original
+
+    labels = df_original[label_col].unique().tolist()
+
+    # TODO: optimize
+
+    texts_labels = []
+
+    for label in labels:
+        reviews_current = df_original[df_original[label_col] == label]
+
+        texts_labels_current = list(
+            zip(reviews_current[text_col].values,
+                reviews_current[label_col].values)
+        )[:max_texts_per_label]  # None also OK
+
+        texts_labels += texts_labels_current  # None also OK
+
+        log('For label "{}" keep "{}" texts'.format(label, len(texts_labels_current)))
+
+    np.random.shuffle(texts_labels)
+
+    texts = [p[0] for p in texts_labels]
+    labels = [p[1] for p in texts_labels]
+
+    df_result = pd.DataFrame()
+    df_result[text_col] = texts
+    df_result[label_col] = labels
+
+    return df_result
 
 
 def _fit_and_save_model(model_name,
@@ -60,8 +93,7 @@ def _fit_and_save_model(model_name,
                         num_epochs,
                         gen_epochs,
                         max_length,
-                        max_gen_length,
-                        debug=False):
+                        max_gen_length):
     log('train model ' + model_name)
 
     texts = data[data[label_col].isin(target_texts_labels)][text_col].values
@@ -71,8 +103,6 @@ def _fit_and_save_model(model_name,
         max_length = MAX_LENGTH_DEFAULT_WORD_LEVEL if word_level else MAX_LENGTH_DEFAULT_CHAR_LEVEL
     if max_gen_length is None:
         max_gen_length = MAX_GEN_LENGTH_DEFAULT_WORD_LEVEL if word_level else MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL
-    if gen_epochs is None:
-        gen_epochs = num_epochs // GEN_EPOCHS_DIVIDER_DEFAULT_IF_DEGUG if debug else num_epochs // GEN_EPOCHS_DIVIDER_DEFAULT
 
     model.train_on_texts(
         texts,
@@ -100,12 +130,8 @@ def _parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--debug', action='store_true', required=False,
-        help='Specify, if want to run fitting in debug mode. ' +\
-             'It means that if parameter nrows is also specified, only first nrows will be read from .csv file')
-    parser.add_argument(
-        '--nrows', type=int, required=False, default=NROWS_TO_READ_IF_DEBUG,
-        help='How many rows should be read in debug mode')
+        '--nrows', type=int, required=False, default=None,
+        help='How many data rows should be read')
 
     parser.add_argument(
         '--data-path',type=str, required=False, default=DATA_FILE_PATH_DEFAULT,
@@ -134,7 +160,7 @@ def _parse_args():
         '--num-epochs', type=int, required=False, default=NUM_EPOCHS_DEFAULT,
         help='Number of epochs to train the model')
     parser.add_argument(
-        '--gen-epochs', type=int, required=False, default=None,
+        '--gen-epochs', type=int, required=False, default=0,
         help='Number of epochs, after each of which sample text generations ny the model will be displayed in console')
     parser.add_argument(
         '--max-length', type=int, required=False, default=None,
@@ -142,6 +168,10 @@ def _parse_args():
     parser.add_argument(
         '--max-gen-length', type=int, required=False, default=None,
         help='Maximum number of tokens to generate as sample after gen_epochs')
+
+    parser.add_argument(
+        '--max-texts-per-label', type=int, required=False, default=None,
+        help='Maximum number of texts to keep per each label')
 
     for text_style in TEXT_STYLES:
         parser.add_argument(
@@ -160,7 +190,9 @@ def _main():
     data = _read_data_csv(
         args.data_path,
         cols=[args.text_col, args.label_col],
-        nrows=args.nrows if args.debug else None)
+        nrows=args.nrows)
+
+    data = _stratify_data(data, args.text_col, args.label_col, args.max_texts_per_label)
 
     for text_style in TEXT_STYLES:
         text_labels = getattr(args, 'labels_' + text_style)
@@ -183,8 +215,7 @@ def _main():
             args.num_epochs,
             args.gen_epochs,
             args.max_length,
-            args.max_gen_length,
-            args.debug)
+            args.max_gen_length)
 
 if __name__ == '__main__':
     _main()
