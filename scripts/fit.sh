@@ -6,6 +6,7 @@ python ./lingofunk_generate/fit.py \
     --data-path './data/reviews.csv' \
     --text-col 'text' \
     --label-col 'stars' \
+    --style-positive --style-negative --style-neutral \
     --labels-positive 5 --labels-positive 4 \
     --labels-negative 1 --labels-negative 2 \
     --labels-neutral 3 \

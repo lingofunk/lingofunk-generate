@@ -17,9 +17,7 @@ TEXT_STYLE_TO_VALUE = {
 }
 
 VALUE_TO_TEXT_STYLE = {
-    'positive': +1.0,
-    'negative': -1.0,
-    'neutral': 0.0
+    value: style for style, value in TEXT_STYLE_TO_VALUE.items()
 }
 
 TEXT_STYLES = list(TEXT_STYLE_TO_VALUE.keys())
