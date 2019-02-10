@@ -4,12 +4,14 @@ import shutil
 import argparse
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 from textgenrnn.textgenrnn import textgenrnn
 
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
 from lingofunk_generate.model_restore_utils import move_model_data
+from lingofunk_generate.model_restore_utils import load_model
 from lingofunk_generate.constants import MODELS_FOLDER_PATH
 from lingofunk_generate.constants import TEXT_STYLES
 from lingofunk_generate.constants import DATA_FILE_PATH_DEFAULT
@@ -18,24 +20,27 @@ from lingofunk_generate.constants import MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL, MAX_
 from lingofunk_generate.constants import NUM_EPOCHS_DEFAULT
 from lingofunk_generate.constants import TRAIN_SIZE_DEFAULT
 from lingofunk_generate.constants import DROPOUT_DEFAULT
+from lingofunk_generate.constants import BATCH_SIZE_DEFAULT
 from lingofunk_generate.utils import get_model_name
 from lingofunk_generate.utils import log as _log
 
+
+graph = tf.get_default_graph()
 
 def log(text):
     _log(text, prefix='Fit: ')
 
 
-def _remove_folder_for_models_if_exists():
-    if os.path.exists(MODELS_FOLDER_PATH):
-        log('remove folder for models (as it may be not empty)')
-        shutil.rmtree(MODELS_FOLDER_PATH)
+def _remove_folder_for_models_if_exists(models_folder):
+    if os.path.exists(models_folder):
+        log('remove folder for models "{}" (as it may be not empty)'.format(models_folder))
+        shutil.rmtree(models_folder)
 
 
-def _create_folder_for_models_if_not_exists():
-    if not os.path.exists(MODELS_FOLDER_PATH):
-        log('create folder for models')
-        os.makedirs(MODELS_FOLDER_PATH)
+def _create_folder_for_models_if_not_exists(models_folder):
+    if not os.path.exists(models_folder):
+        log('create folder for models "{}"'.format(models_folder))
+        os.makedirs(models_folder)
 
 
 def _read_data_csv(data_path, index_col=0, cols=None, nrows=None):
@@ -81,7 +86,7 @@ def _stratify_data(df_original, text_col, label_col, max_texts_per_label=None):
     return df_result
 
 
-def _fit_and_save_model(model_name,
+def _fit_and_save_model(text_style,
                         data,
                         target_texts_labels,
                         text_col,
@@ -93,11 +98,27 @@ def _fit_and_save_model(model_name,
                         num_epochs,
                         gen_epochs,
                         max_length,
-                        max_gen_length):
+                        max_gen_length,
+                        batch_size,
+                        load_models=False,
+                        models_folder_source=None,
+                        models_folder_target=MODELS_FOLDER_PATH):
+    model_name = get_model_name(text_style)
     log('train model ' + model_name)
 
+    if len(target_texts_labels) == 0:
+        log('no labels, finish training')
+        return
+
+    model_name = get_model_name(text_style)
+
+    if not load_models:
+        model = textgenrnn(name=model_name)
+    else:
+        log('restore model "{}"'.format(model_name))
+        model = load_model(text_style, models_folder_source, graph)
+
     texts = data[data[label_col].isin(target_texts_labels)][text_col].values
-    model = textgenrnn(name=model_name)
 
     if max_length is None:
         max_length = MAX_LENGTH_DEFAULT_WORD_LEVEL if word_level else MAX_LENGTH_DEFAULT_CHAR_LEVEL
@@ -113,13 +134,15 @@ def _fit_and_save_model(model_name,
         num_epochs=num_epochs,
         gen_epochs=gen_epochs,
         max_length=max_length,
-        max_gen_length=max_gen_length)
+        max_gen_length=max_gen_length,
+        batch_size=batch_size)
 
     log('save model ' + model_name)
 
     try:
         move_model_data(model_name=model_name,
-                        source_folder_path=os.getcwd())
+                        source_folder_path=os.getcwd(),
+                        target_folder_path=models_folder_target)
     except IOError:
         log('error, fail to move model data files to special folder')
 
@@ -132,6 +155,16 @@ def _parse_args():
     parser.add_argument(
         '--nrows', type=int, required=False, default=None,
         help='How many data rows should be read')
+
+    parser.add_argument(
+        '--load-models', action='store_true', required=False,
+        help='Try to load models and to continue fitting them')
+    parser.add_argument(
+        '--models-folder-source', type=str, required=False, default=MODELS_FOLDER_PATH,
+        help='Folder to load models (weights, vocabs, configs) from')
+    parser.add_argument(
+        '--models-folder-target', type=str, required=False, default=MODELS_FOLDER_PATH,
+        help='Folder to save models (weights, vocabs, configs) to')
 
     parser.add_argument(
         '--data-path',type=str, required=False, default=DATA_FILE_PATH_DEFAULT,
@@ -170,6 +203,10 @@ def _parse_args():
         help='Maximum number of tokens to generate as sample after gen_epochs')
 
     parser.add_argument(
+        '--batch-size', type=int, required=False, default=BATCH_SIZE_DEFAULT,
+        help='Batch size')
+
+    parser.add_argument(
         '--max-texts-per-label', type=int, required=False, default=None,
         help='Maximum number of texts to keep per each label')
 
@@ -187,10 +224,22 @@ def _parse_args():
 
 
 def _main():
-    _remove_folder_for_models_if_exists()
-    _create_folder_for_models_if_not_exists()
-
     args = _parse_args()
+
+    text_styles = [
+        text_style for text_style in TEXT_STYLES if getattr(args, 'style_' + text_style)
+    ]
+
+    if not args.load_models:
+        _remove_folder_for_models_if_exists(args.models_folder_target)
+        _create_folder_for_models_if_not_exists(args.models_folder_target)
+    else:
+        if not os.path.isdir(args.models_folder_source):
+            raise IOError('Can\'t load models from folder "{}": folder not exists'.format(args.models_folder_source))
+
+    if not os.path.exists(args.models_folder_target):
+        log('create target folder for models "{}"'.format(args.models_folder_target))
+        os.makedirs(args.models_folder_target)
 
     data = _read_data_csv(
         args.data_path,
@@ -199,21 +248,14 @@ def _main():
 
     data = _stratify_data(data, args.text_col, args.label_col, args.max_texts_per_label)
 
-    for text_style in TEXT_STYLES:
-        is_model_trained_for_style = getattr(args, 'style_' + text_style)
-
-        if not is_model_trained_for_style:
-            continue
+    for text_style in text_styles:
+        assert text_style in TEXT_STYLES, 'No such text style "{}" in known styles "{}". Can\'t fit'.format(
+            text_style, TEXT_STYLES)
 
         text_labels = getattr(args, 'labels_' + text_style)
 
-        if not text_labels:
-            continue
-
-        model_name = get_model_name(text_style)
-
         _fit_and_save_model(
-            model_name,
+            text_style,
             data,
             text_labels,
             args.text_col,
@@ -225,7 +267,11 @@ def _main():
             args.num_epochs,
             args.gen_epochs,
             args.max_length,
-            args.max_gen_length)
+            args.max_gen_length,
+            args.batch_size,
+            args.load_models,
+            args.models_folder_source,
+            args.models_folder_target)
 
 if __name__ == '__main__':
     _main()
