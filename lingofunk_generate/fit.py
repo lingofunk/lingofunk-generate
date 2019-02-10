@@ -175,6 +175,11 @@ def _parse_args():
 
     for text_style in TEXT_STYLES:
         parser.add_argument(
+            '--style-{}'.format(text_style), action='store_true', required=False,
+            help='Train model for style "{}"'.format(text_style))
+
+    for text_style in TEXT_STYLES:
+        parser.add_argument(
             '--labels-{}'.format(text_style), action='append', type=int, required=False,
             help='Texts of which labels should be treated as ones of style "{}"'.format(text_style))
 
@@ -195,6 +200,11 @@ def _main():
     data = _stratify_data(data, args.text_col, args.label_col, args.max_texts_per_label)
 
     for text_style in TEXT_STYLES:
+        is_model_trained_for_style = getattr(args, 'style_' + text_style)
+
+        if not is_model_trained_for_style:
+            continue
+
         text_labels = getattr(args, 'labels_' + text_style)
 
         if not text_labels:

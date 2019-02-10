@@ -6,6 +6,7 @@ import time
 from flask import Flask, request, jsonify
 import tensorflow as tf
 import numpy as np
+from textgenrnn.utils import synthesize
 
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
@@ -18,7 +19,8 @@ from lingofunk_generate.constants import PORT_DEFAULT
 from lingofunk_generate.constants import TEMPERATURE_DEFAULT
 from lingofunk_generate.constants import DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
 from lingofunk_generate.constants import NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING
-
+from lingofunk_generate.constants import VALUE_TO_TEXT_STYLE
+from lingofunk_generate.constants import NUM_MODELS_TO_CHOOSE_FROM_WHEN_SYNTHESIZE
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -35,28 +37,77 @@ def log(text):
     _log(text, prefix='Server: ')
 
 
-@app.route('/hello', methods=['GET'])
-def hello_world():
-    return 'Hello World!'
-
-
-@app.route('/generate', methods=['GET', 'POST'])
-def generate_text():
-    # TODO: unify logging
-    # log('generate text for style "{}"'.format(request.args['style']))
-    logger.debug('request: {}'.format(request.get_json()))
-
-    data = request.get_json()
-    text_style = data.get('style')
-
+def get_text_of_style(text_style, temperature):
     global graph
-    global temperature
 
     with graph.as_default():
         if models[text_style] is not None:
             text = models[text_style].generate(1, temperature=temperature, return_as_list=True)[0]
         else:
             text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+
+    return text
+
+
+@app.route('/hello', methods=['GET'])
+def hello_world():
+    return 'Hello World!'
+
+
+@app.route('/generate/discrete', methods=['POST'])
+def generate_discrete():
+    logger.debug('request: {}'.format(request.get_json()))
+
+    data = request.get_json()
+    text_style = data.get('style-name')
+
+    global temperature  # TODO: remove global
+
+    text = get_text_of_style(text_style, temperature)
+
+    return jsonify(text=text)
+
+
+@app.route('/generate/continuous', methods=['POST'])
+def generate_continuous():
+    logger.debug('request: {}'.format(request.get_json()))
+
+    global temperature
+
+    data = request.get_json()
+    text_style_value = data.get('style-value')
+
+    if text_style_value in [-1.0, 0.0, +1.0]:
+        text_style = VALUE_TO_TEXT_STYLE[text_style_value]
+        text = get_text_of_style(text_style, temperature)
+
+        return jsonify(text=text)
+
+    text_style_value_extreme = +1.0 if text_style_value > 0 else -1.0  # I really don't know how to name it
+    text_style_value_neutral = 0.0
+
+    model_extreme = models[VALUE_TO_TEXT_STYLE[text_style_value_extreme]]
+    model_neutral = models[VALUE_TO_TEXT_STYLE[text_style_value_neutral]]
+
+    fraction_of_model_extreme = abs(text_style_value)
+    num_models_extreme = int(np.round(
+        fraction_of_model_extreme * NUM_MODELS_TO_CHOOSE_FROM_WHEN_SYNTHESIZE
+    ))
+    num_models_neutral = NUM_MODELS_TO_CHOOSE_FROM_WHEN_SYNTHESIZE - num_models_extreme
+
+    assert num_models_extreme > 0, 'Number of "{}" models is less than zero: "{}"'.format(
+        VALUE_TO_TEXT_STYLE[text_style_value_extreme], num_models_extreme)
+    assert num_models_neutral > 0, 'Number of "{}" models is less than zero: "{}"'.format(
+        VALUE_TO_TEXT_STYLE[text_style_value_neutral], num_models_neutral)
+
+    models_to_generate_text = (
+        num_models_extreme * [model_extreme] +
+        num_models_neutral * [model_neutral]
+    )
+    np.random.shuffle(models_to_generate_text)
+
+    with graph.as_default():
+        text = synthesize(models_to_generate_text, temperature=temperature, return_as_list=True)[0]
 
     return jsonify(text=text)
 
@@ -94,6 +145,9 @@ def _set_temperature(t):
 def _load_models():
     log('load models')
 
+    global graph
+    graph = tf.get_default_graph()
+
     for text_style in TEXT_STYLES:
         model_name = get_model_name(text_style)
 
@@ -104,9 +158,6 @@ def _load_models():
             model = None
 
         models[text_style] = model
-
-    global graph
-    graph = tf.get_default_graph()
 
 
 def _test_models():
