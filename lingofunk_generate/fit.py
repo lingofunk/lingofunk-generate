@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import pandas as pd
+import time
 import numpy as np
 import tensorflow as tf
 from textgenrnn.textgenrnn import textgenrnn
@@ -26,6 +27,8 @@ from lingofunk_generate.utils import log as _log
 
 
 graph = tf.get_default_graph()
+np.random.seed(int(time.time()))
+
 
 def log(text):
     _log(text, prefix='Fit: ')
@@ -52,25 +55,27 @@ def _read_data_csv(data_path, index_col=0, cols=None, nrows=None):
     return df
 
 
-def _stratify_data(df_original, text_col, label_col, max_texts_per_label=None):
+def _stratify_data(df, text_col, label_col, max_texts_per_label=None):
     if max_texts_per_label is None:
-        return df_original
+        return df
 
-    labels = df_original[label_col].unique().tolist()
+    df = df.sample(frac=1).reset_index(drop=True)
+    labels = df[label_col].unique().tolist()
 
     # TODO: optimize
 
     texts_labels = []
 
     for label in labels:
-        reviews_current = df_original[df_original[label_col] == label]
+        reviews_current = df[df[label_col] == label]
 
         texts_labels_current = list(
             zip(reviews_current[text_col].values,
                 reviews_current[label_col].values)
-        )[:max_texts_per_label]  # None also OK
+        )
 
-        texts_labels += texts_labels_current  # None also OK
+        texts_labels_current = texts_labels_current[:max_texts_per_label]  # None also OK
+        texts_labels += texts_labels_current
 
         log('For label "{}" keep "{}" texts'.format(label, len(texts_labels_current)))
 
