@@ -37,6 +37,18 @@ def log(text):
     _log(text, prefix='Server: ')
 
 
+def get_text_of_style(text_style, temperature):
+    global graph
+
+    with graph.as_default():
+        if models[text_style] is not None:
+            text = models[text_style].generate(1, temperature=temperature, return_as_list=True)[0]
+        else:
+            text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+
+    return text
+
+
 @app.route('/hello', methods=['GET'])
 def hello_world():
     return 'Hello World!'
@@ -49,14 +61,9 @@ def generate_discrete():
     data = request.get_json()
     text_style = data.get('style-name')
 
-    global graph
-    global temperature
+    global temperature  # TODO: remove global
 
-    with graph.as_default():
-        if models[text_style] is not None:
-            text = models[text_style].generate(1, temperature=temperature, return_as_list=True)[0]
-        else:
-            text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
+    text = get_text_of_style(text_style, temperature)
 
     return jsonify(text=text)
 
@@ -65,11 +72,16 @@ def generate_discrete():
 def generate_continuous():
     logger.debug('request: {}'.format(request.get_json()))
 
+    global temperature
+
     data = request.get_json()
     text_style_value = data.get('style-value')
 
-    global graph
-    global temperature
+    if text_style_value in [-1.0, 0.0, +1.0]:
+        text_style = VALUE_TO_TEXT_STYLE[text_style_value]
+        text = get_text_of_style(text_style, temperature)
+
+        return jsonify(text=text)
 
     text_style_value_extreme = +1.0 if text_style_value > 0 else -1.0  # I really don't know how to name it
     text_style_value_neutral = 0.0
@@ -133,6 +145,9 @@ def _set_temperature(t):
 def _load_models():
     log('load models')
 
+    global graph
+    graph = tf.get_default_graph()
+
     for text_style in TEXT_STYLES:
         model_name = get_model_name(text_style)
 
@@ -143,9 +158,6 @@ def _load_models():
             model = None
 
         models[text_style] = model
-
-    global graph
-    graph = tf.get_default_graph()
 
 
 def _test_models():
