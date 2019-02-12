@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-python ./lingofunk_generate/fit.py \
+PYTHONPATH=. python lingofunk_generate.fit \
     --nrows 500 \
     --max-texts-per-label 2 \
     --data-path './data/reviews.csv' \

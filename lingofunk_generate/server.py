@@ -23,10 +23,6 @@ from lingofunk_generate.model_restore_utils import load_models as _load_models
 from lingofunk_generate.utils import log as _log
 from textgenrnn.utils import synthesize
 
-project_folder = Path(__file__).parent.parent
-sys.path.insert(0, project_folder)
-
-
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

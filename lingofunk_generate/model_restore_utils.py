@@ -94,7 +94,7 @@ def load_model(
         try:
             model = restore_model_from_data(model_name, models_folder)
         except (IOError, ValueError):
-            log('model "{}" not found in folder'.format(model_name, models_folder))
+            log('model "{}" not found in folder {}'.format(model_name, models_folder))
             model = None
 
     return model
