@@ -27,9 +27,6 @@ from lingofunk_generate.utils import get_model_name
 from lingofunk_generate.utils import log as _log
 from textgenrnn.textgenrnn import textgenrnn
 
-project_folder = Path(__file__).parent.parent
-sys.path.insert(0, project_folder)
-
 graph = tf.get_default_graph()
 np.random.seed(int(time.time()))
 
