@@ -4,8 +4,7 @@ import os
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
-# TODO: remove hardcode, pass to config
-MODELS_FOLDER_PATH = os.path.join(project_folder, 'models_char')
+MODELS_FOLDER_PATH = os.path.join(project_folder, 'models')
 DATA_FOLDER_PATH = os.path.join(project_folder, 'data')
 
 DATA_FILE_NAME_DEFAULT = 'review.csv'
@@ -43,5 +42,7 @@ NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING = 2
 
 PORT_DEFAULT = 8000
 TEMPERATURE_DEFAULT = 0.5
+
+BATCH_SIZE_DEFAULT = 128
 
 NUM_MODELS_TO_CHOOSE_FROM_WHEN_SYNTHESIZE = 100

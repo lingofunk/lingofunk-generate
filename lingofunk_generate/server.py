@@ -11,8 +11,7 @@ from textgenrnn.utils import synthesize
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
-from lingofunk_generate.model_restore_utils import restore_model_from_data
-from lingofunk_generate.utils import get_model_name
+from lingofunk_generate.model_restore_utils import load_models as _load_models
 from lingofunk_generate.utils import log as _log
 from lingofunk_generate.constants import TEXT_STYLES
 from lingofunk_generate.constants import PORT_DEFAULT
@@ -21,6 +20,7 @@ from lingofunk_generate.constants import DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUN
 from lingofunk_generate.constants import NUM_TEXT_GENERATIONS_TO_TEST_A_MODEL_AFTER_LOADING
 from lingofunk_generate.constants import VALUE_TO_TEXT_STYLE
 from lingofunk_generate.constants import NUM_MODELS_TO_CHOOSE_FROM_WHEN_SYNTHESIZE
+from lingofunk_generate.constants import MODELS_FOLDER_PATH
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ app = Flask(__name__)
 
 models = dict.fromkeys(TEXT_STYLES, None)
 temperature = None
-graph = None
+graph = tf.get_default_graph()
 
 
 def log(text):
@@ -130,6 +130,10 @@ def _parse_args():
              'High temperatures (eg 0.9, values higher than 1.0 also possible) make responses diverse, ' + \
              'but mistakes are also more likely to take place')
 
+    parser.add_argument(
+        '--models-folder', type=str, required=False, default=MODELS_FOLDER_PATH,
+        help='Folder to load models (weights, vocabs, configs) from')
+
     return parser.parse_args()
 
 
@@ -140,24 +144,6 @@ def _set_seed(seed):
 def _set_temperature(t):
     global temperature
     temperature = t
-
-
-def _load_models():
-    log('load models')
-
-    global graph
-    graph = tf.get_default_graph()
-
-    for text_style in TEXT_STYLES:
-        model_name = get_model_name(text_style)
-
-        try:
-            model = restore_model_from_data(model_name)
-        except (IOError, ValueError):
-            log('model "{}" not found'.format(model_name))
-            model = None
-
-        models[text_style] = model
 
 
 def _test_models():
@@ -182,7 +168,7 @@ def _main():
 
     _set_seed(args.seed)
     _set_temperature(args.temperature)
-    _load_models()
+    _load_models(models, args.models_folder, graph)
     _test_models()
 
     app.run(host='0.0.0.0', port=args.port, debug=True, threaded=True)

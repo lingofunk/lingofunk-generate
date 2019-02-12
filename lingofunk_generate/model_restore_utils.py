@@ -1,9 +1,11 @@
 import os
 import shutil
+import tensorflow as tf
 from textgenrnn.textgenrnn import textgenrnn
-from lingofunk_generate.constants import MODELS_FOLDER_PATH, MODEL_DATA_FILES_ENDINGS
+from lingofunk_generate.constants import MODELS_FOLDER_PATH, MODEL_DATA_FILES_ENDINGS, TEXT_STYLES
 from lingofunk_generate.utils import log as _log
 from lingofunk_generate.utils import get_data_file_key_for_model_constructor
+from lingofunk_generate.utils import get_model_name
 
 
 MODEL_DATA_FILES_KEYS_FOR_MODEL_CONSTRUCTOR = [
@@ -17,7 +19,8 @@ def log(text):
 
 
 def move_model_data(model_name, source_folder_path, target_folder_path=None):
-    log('move model data')
+    log('move model "{}" data from folder "{}" to folder "{}"'.format(
+        model_name, source_folder_path, target_folder_path))
 
     if not os.path.isdir(source_folder_path):
         raise IOError('Source folder "{}" not exists'.format(source_folder_path))
@@ -64,3 +67,26 @@ def restore_model_from_data(model_name, data_folder_path=None):
 
     return textgenrnn(name=model_name,
                       **data_files_paths)
+
+
+def load_model(text_style, models_folder=MODELS_FOLDER_PATH, graph=tf.get_default_graph()):
+    with graph.as_default():
+        assert text_style in TEXT_STYLES, 'No such text style "{}" in known styles {}'.format(text_style, TEXT_STYLES)
+
+        model_name = get_model_name(text_style)
+
+        try:
+            model = restore_model_from_data(model_name, models_folder)
+        except (IOError, ValueError):
+            log('model "{}" not found in folder'.format(model_name, models_folder))
+            model = None
+
+    return model
+
+
+def load_models(models, models_folder=MODELS_FOLDER_PATH, graph=tf.get_default_graph()):
+    log('load models')
+
+    with graph.as_default():
+        for text_style in models.keys():
+            models[text_style] = load_model(text_style, models_folder, graph)
