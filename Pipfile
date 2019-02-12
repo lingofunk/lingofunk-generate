@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+h5py = "*"
+scikit-learn = "*"
+tqdm = "*"
+numpy = ">=1.9.1"
+scipy = ">=0.14"
+six = ">=1.9.0"
+tensorflow = "*"
+pandas = "*"
+textgenrnn = "*"
+Keras = ">=2.1.5"
+PyYAML = "*"
+Keras-Applications = ">=1.0.6"
+Keras-Preprocessing = ">=1.0.5"
+Flask = "*"
+
+[requires]
+python_version = "3.6"
