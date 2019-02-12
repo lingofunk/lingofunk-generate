@@ -84,9 +84,12 @@ def load_model(text_style, models_folder=MODELS_FOLDER_PATH, graph=tf.get_defaul
     return model
 
 
-def load_models(models, models_folder=MODELS_FOLDER_PATH, graph=tf.get_default_graph()):
+def load_models(models, models_subfolder='models_char', graph=tf.get_default_graph()):
     log('load models')
 
     with graph.as_default():
         for text_style in models.keys():
-            models[text_style] = load_model(text_style, models_folder, graph)
+            models[text_style] = load_model(
+                text_style,
+                os.path.join(MODELS_FOLDER_PATH, models_subfolder),
+                graph)

@@ -4,7 +4,7 @@ import os
 project_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, project_folder)
 
-MODELS_FOLDER_PATH = os.path.join(project_folder, 'models')
+MODELS_FOLDER_PATH = os.path.join(project_folder, 'models', 'models_char')
 DATA_FOLDER_PATH = os.path.join(project_folder, 'data')
 
 DATA_FILE_NAME_DEFAULT = 'review.csv'

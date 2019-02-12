@@ -131,8 +131,8 @@ def _parse_args():
              'but mistakes are also more likely to take place')
 
     parser.add_argument(
-        '--models-folder', type=str, required=False, default=MODELS_FOLDER_PATH,
-        help='Folder to load models (weights, vocabs, configs) from')
+        '--models', type=str, required=False, default=None,
+        help='Subfolder of folder models to load models (weights, vocabs, configs) from')
 
     return parser.parse_args()
 
@@ -168,7 +168,7 @@ def _main():
 
     _set_seed(args.seed)
     _set_temperature(args.temperature)
-    _load_models(models, args.models_folder, graph)
+    _load_models(models, args.models, graph)
     _test_models()
 
     app.run(host='0.0.0.0', port=args.port, debug=True, threaded=True)
