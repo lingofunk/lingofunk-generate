@@ -18,6 +18,7 @@ from lingofunk_generate.constants import (
     TEMPERATURE_DEFAULT,
     TEXT_STYLES,
     VALUE_TO_TEXT_STYLE,
+    MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL
 )
 from lingofunk_generate.model_restore_utils import load_models as _load_models
 from lingofunk_generate.utils import log as _log
@@ -31,6 +32,7 @@ app = Flask(__name__)
 
 models = dict.fromkeys(TEXT_STYLES, None)
 temperature = None
+max_gen_length = None
 graph = tf.get_default_graph()
 
 
@@ -44,7 +46,10 @@ def get_text_of_style(text_style, temperature):
     with graph.as_default():
         if models[text_style] is not None:
             text = models[text_style].generate(
-                1, temperature=temperature, return_as_list=True
+                1,
+                temperature=temperature,
+                max_gen_length=max_gen_length,
+                return_as_list=True
             )[0]
         else:
             text = DEFAULT_TEXT_IF_REQUIRED_MODEL_NOT_FOUND
@@ -118,7 +123,10 @@ def generate_continuous():
 
     with graph.as_default():
         text = synthesize(
-            models_to_generate_text, temperature=temperature, return_as_list=True
+            models_to_generate_text,
+            temperature=temperature,
+            max_gen_length=max_gen_length,
+            return_as_list=True
         )[0]
 
     return jsonify(text=text)
@@ -136,7 +144,11 @@ def _parse_args():
     )
 
     parser.add_argument(
-        "--seed", type=int, required=False, default=int(time.time()), help="Random seed"
+        "--seed",
+        type=int,
+        required=False,
+        default=int(time.time()),
+        help="Random seed"
     )
 
     parser.add_argument(
@@ -158,6 +170,14 @@ def _parse_args():
         help="Subfolder of folder models to load models (weights, vocabs, configs) from",
     )
 
+    parser.add_argument(
+        "--max-gen-length",
+        type=int,
+        required=False,
+        default=MAX_GEN_LENGTH_DEFAULT_CHAR_LEVEL,
+        help="Max length of generated text (in chars or in words, depending on model being used)"
+    )
+
     return parser.parse_args()
 
 
@@ -168,6 +188,11 @@ def _set_seed(seed):
 def _set_temperature(t):
     global temperature
     temperature = t
+
+
+def _set_max_gen_length(length):
+    global max_gen_length
+    max_gen_length = length
 
 
 def _test_models():
@@ -194,6 +219,7 @@ def _main():
 
     _set_seed(args.seed)
     _set_temperature(args.temperature)
+    _set_max_gen_length(args.max_gen_length)
     _load_models(models, args.models, graph)
     _test_models()
 
